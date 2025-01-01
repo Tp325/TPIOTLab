@@ -1,0 +1,3 @@
+Được sử dụng cho các cảm biến Vernier 
+có các chức năng tự động nhận diện cảm biến : name, slope, intercept...
+Ver 1.0 by Thinh
