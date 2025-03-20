@@ -15,7 +15,8 @@ const char* mqtt_pass = "Iotlab@2023";
 
 // Các chân LoRa
 #define SS 5
-#define RST 4
+// #define RST 4
+#define RST 13
 #define DIO0 2
 
 // Tạo client WiFi và MQTT
@@ -29,7 +30,8 @@ void setup() {
   LoRa.setPins(SS, RST, DIO0);
   if (!LoRa.begin(433E6)) {  // Tần số 433 MHz
     Serial.println("Khởi động LoRa thất bại!");
-    while (1);
+    while (1)
+      ;
   }
   Serial.println("LoRa đã sẵn sàng để nhận dữ liệu!");
 
@@ -59,7 +61,7 @@ void loop() {
     Serial.println(receivedData);
 
     // Gửi dữ liệu lên MQTT
-    if (mqttClient.publish("Rice_Station_TD", receivedData.c_str())) {
+    if (mqttClient.publish("Soctrangricefield", receivedData.c_str())) {
       Serial.println("Dữ liệu đã được gửi lên MQTT thành công!");
     } else {
       Serial.println("Gửi dữ liệu lên MQTT thất bại!");
@@ -82,7 +84,7 @@ void setupWiFi() {
 void connectMQTT() {
   while (!mqttClient.connected()) {
     Serial.print("Đang kết nối với MQTT Broker...");
-    if (mqttClient.connect("ESP32Client", mqtt_user, mqtt_pass)) {
+    if (mqttClient.connect("ESP3413241", mqtt_user, mqtt_pass)) {
       Serial.println(" Đã kết nối với MQTT Broker!");
     } else {
       Serial.print(" Thất bại với mã lỗi: ");

@@ -3,7 +3,7 @@
 #include "esp_sleep.h"
 #include <SPI.h>
 
-#define StationID 6
+#define StationID 11
 #define sleeptime 15 * 60  // Giây
 #define ANALOG_PIN 26 
 #define LED_blue 14
