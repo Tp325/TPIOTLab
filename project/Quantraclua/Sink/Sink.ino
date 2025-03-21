@@ -1,11 +1,12 @@
-#include <WiFi.h>
+#include <WiFiManager.h>
+#include <strings_en.h>
+#include <wm_consts_en.h>
+#include <wm_strings_en.h>
+#include <wm_strings_es.h>
 #include <PubSubClient.h>
 #include <SPI.h>
 #include <LoRa.h>
 
-// Thông tin Wi-Fi
-const char* ssid = "Phong_4";
-const char* wifi_password = "1234512345";
 
 // Thông tin MQTT Broker
 const char* mqtt_server = "103.221.220.183";
@@ -25,7 +26,6 @@ PubSubClient mqttClient(espClient);
 
 void setup() {
   Serial.begin(9600);
-
   // Khởi động LoRa
   LoRa.setPins(SS, RST, DIO0);
   if (!LoRa.begin(433E6)) {  // Tần số 433 MHz
@@ -37,7 +37,6 @@ void setup() {
 
   // Kết nối WiFi
   setupWiFi();
-
   // Kết nối MQTT
   mqttClient.setServer(mqtt_server, mqtt_port);
   connectMQTT();
@@ -72,12 +71,16 @@ void loop() {
 // Hàm kết nối Wi-Fi
 void setupWiFi() {
   Serial.print("Đang kết nối với WiFi...");
-  WiFi.begin(ssid, wifi_password);
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
+  WiFiManager wm;
+  bool res;
+  res = wm.autoConnect("AutoConnectAP", "AutoConnectAP");
+  if (!res) {
+    Serial.println("Failed to connect");
+    // ESP.restart();
+  } else {
+    //if you get here you have connected to the WiFi
+    Serial.println("connected...yeey :)");
   }
-  Serial.println(" Đã kết nối với WiFi!");
 }
 
 // Hàm kết nối MQTT
