@@ -8,9 +8,9 @@ Communication communication;
 RS485Sensor sensor;
 
 void setup() {
-  createNewPool(1, VALVE_SUPPLY_1, VALVE_DRAIN_1, 0x11, 40);
-  createNewPool(2, VALVE_SUPPLY_2, VALVE_DRAIN_2, 0x22, 40);
-  createNewPool(3, VALVE_SUPPLY_3, VALVE_DRAIN_3, 0x33, 40);
+  createNewPool(1, VALVE_SUPPLY_1, VALVE_DRAIN_1, 0x11, 60);
+  createNewPool(2, VALVE_SUPPLY_2, VALVE_DRAIN_2, 0x22, 60);
+  createNewPool(3, VALVE_SUPPLY_3, VALVE_DRAIN_3, 0x33, 60);
   numberOfPool = 3;
   Serial.begin(9600);
   communication.begin();
@@ -45,12 +45,15 @@ void vTaskSend(void *pvParameters) {
   }
 }
 void vTaskExecution(void *pvParameters) {
-  execution.begin();
   while (1) {
     for (int i = 1; i <= numberOfPool; i++) {
       if (pool[i].autoStatus == 1) {
-        pool[i].mucnuoc = pool[i].SensorpieLenght - sensor.getSensorValue(pool[i].IDOfSensor) / 10.0;
         execution.autoRun(i);
+        if (pool[i].isDoneAutoMode == 1) {
+          pool[i].isDoneAutoMode = 0;
+          communication.sendToSink(String("{\"ID\":" + String(i) + ",\"a\":" + String(int(pool[i].autoStatus)) + "}"));
+          communication.sendToSink(String("{\"ID\":" + String(i) + ",\"mucn\":" + String(pool[i].mucnuoc) + "}"));
+        }
       } else {
         if (pool[i].inStatus == 1) {
           execution.supplyIn(i);
@@ -62,18 +65,33 @@ void vTaskExecution(void *pvParameters) {
         } else {
           execution.xdrainOut(i);
         }
+        vTaskDelay(10 / portTICK_PERIOD_MS);
       }
-      vTaskDelay(100 / portTICK_PERIOD_MS);
     }
-    vTaskDelay(5000 / portTICK_PERIOD_MS);
+    vTaskDelay(500 / portTICK_PERIOD_MS);
   }
 }
 void vTaskReadSensor(void *pvParameters) {
+  for (int i = 1; i <= numberOfPool; i++) {
+    pool[i].mucnuoc = pool[i].SensorpieLenght - sensor.getSensorValue(pool[i].IDOfSensor) / 10.0;
+    communication.sendToSink(String("{\"ID\":" + String(i) + ",\"mucn\":" + String(pool[i].mucnuoc) + "}"));
+    vTaskDelay(200 / portTICK_PERIOD_MS);
+  }
   while (1) {
     for (int i = 1; i <= numberOfPool; i++) {
-      communication.sendToSink(String("{\"ID\":" + String(i) + ",\"mucn\":" + String(pool[i].SensorpieLenght - (sensor.getSensorValue(pool[i].IDOfSensor)) / 10.0) + "}"));
-      vTaskDelay(1000 / portTICK_PERIOD_MS);
+      if (pool[i].autoStatus == 1) {
+        if (millis() - pool[i].timeReposeDataSensorToSink >= 3000) {
+          pool[i].mucnuoc = pool[i].SensorpieLenght - sensor.getSensorValue(pool[i].IDOfSensor) / 10.0;
+          communication.sendToSink(String("{\"is\":0,\"ID\":" + String(i) + ",\"mucn\":" + String(pool[i].mucnuoc) + "}"));
+          pool[i].timeReposeDataSensorToSink = millis();
+        }
+      } else if (millis() - pool[i].timeReposeDataSensorToSink >= 60 * 1000) {
+        pool[i].mucnuoc = pool[i].SensorpieLenght - (sensor.getSensorValue(pool[i].IDOfSensor)) / 10.0;
+        communication.sendToSink(String("{\"is\":0,\"ID\":" + String(i) + ",\"mucn\":" + String(pool[i].mucnuoc) + "}"));
+        pool[i].timeReposeDataSensorToSink = millis();
+      }
+      vTaskDelay(200 / portTICK_PERIOD_MS);
     }
-    vTaskDelay(60000  / portTICK_PERIOD_MS);
+    vTaskDelay(500 / portTICK_PERIOD_MS);
   }
 }
