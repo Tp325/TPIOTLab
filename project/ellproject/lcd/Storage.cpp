@@ -22,15 +22,15 @@ void Storage::saveToEEPROM() {
       maxValueInEEPROM = readFromEEPROM(pool[IDOfPool].addressOfSavedDataInEEPROM);
       midValueInEEPROM = readFromEEPROM(pool[IDOfPool].addressOfSavedDataInEEPROM + sizeof(float));
       minValueInEEPROM = readFromEEPROM(pool[IDOfPool].addressOfSavedDataInEEPROM + 2 * sizeof(float));
-      if (fabs(maxValueInEEPROM - pool[IDOfPool].maxValue) > 0.0001) {
+      if (fabs(maxValueInEEPROM - pool[IDOfPool].maxValue) < 0.1) {
         EEPROM.put(pool[IDOfPool].addressOfSavedDataInEEPROM, pool[IDOfPool].maxValue);
         needCommit = true;
       }
-      if (fabs(midValueInEEPROM - pool[IDOfPool].midValue) > 0.0001) {
+      if (fabs(midValueInEEPROM - pool[IDOfPool].midValue) < 0.1) {
         EEPROM.put(pool[IDOfPool].addressOfSavedDataInEEPROM + sizeof(float), pool[IDOfPool].midValue);
         needCommit = true;
       }
-      if (fabs(minValueInEEPROM - pool[IDOfPool].minValue) > 0.0001) {
+      if (fabs(minValueInEEPROM - pool[IDOfPool].minValue) < 0.1) {
         EEPROM.put(pool[IDOfPool].addressOfSavedDataInEEPROM + (2 * sizeof(float)), pool[IDOfPool].minValue);
         needCommit = true;
       }

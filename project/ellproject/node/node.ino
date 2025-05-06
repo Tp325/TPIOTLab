@@ -74,7 +74,7 @@ void vTaskExecution(void *pvParameters) {
 void vTaskReadSensor(void *pvParameters) {
   for (int i = 1; i <= numberOfPool; i++) {
     pool[i].mucnuoc = pool[i].SensorpieLenght - sensor.getSensorValue(pool[i].IDOfSensor) / 10.0;
-    communication.sendToSink(String("{\"ID\":" + String(i) + ",\"mucn\":" + String(pool[i].mucnuoc) + "}"));
+    communication.sendToSink(String("{\"is\":0,\"SID\":\"" + String(StationID) + "\",\"ID\":" + String(i) + ",\"mucn\":" + String(pool[i].mucnuoc) + "}"));
     vTaskDelay(200 / portTICK_PERIOD_MS);
   }
   while (1) {
@@ -82,12 +82,12 @@ void vTaskReadSensor(void *pvParameters) {
       if (pool[i].autoStatus == 1) {
         if (millis() - pool[i].timeReposeDataSensorToSink >= 3000) {
           pool[i].mucnuoc = pool[i].SensorpieLenght - sensor.getSensorValue(pool[i].IDOfSensor) / 10.0;
-          communication.sendToSink(String("{\"is\":0,\"ID\":" + String(i) + ",\"mucn\":" + String(pool[i].mucnuoc) + "}"));
+          communication.sendToSink(String("{\"is\":0,\"SID\":\"" + String(StationID) + "\",\"ID\":" + String(i) + ",\"mucn\":" + String(pool[i].mucnuoc) + "}"));
           pool[i].timeReposeDataSensorToSink = millis();
         }
       } else if (millis() - pool[i].timeReposeDataSensorToSink >= 60 * 1000) {
         pool[i].mucnuoc = pool[i].SensorpieLenght - (sensor.getSensorValue(pool[i].IDOfSensor)) / 10.0;
-        communication.sendToSink(String("{\"is\":0,\"ID\":" + String(i) + ",\"mucn\":" + String(pool[i].mucnuoc) + "}"));
+        communication.sendToSink(String("{\"is\":0,\"SID\":\"" + String(StationID) + "\",\"ID\":" + String(i) + ",\"mucn\":" + String(pool[i].mucnuoc) + "}"));
         pool[i].timeReposeDataSensorToSink = millis();
       }
       vTaskDelay(200 / portTICK_PERIOD_MS);

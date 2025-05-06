@@ -1,7 +1,7 @@
 #include "config.h"
 
 
-String stationID="Test Luon";
+String StationID="TESTH6CT";
 
 
 

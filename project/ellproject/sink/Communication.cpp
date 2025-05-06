@@ -26,7 +26,7 @@ void onWiFiEvent(WiFiEvent_t event) {
       isWifiConnect = 1;
       break;
     case ARDUINO_EVENT_WIFI_STA_DISCONNECTED:
-      Serial.println("[WiFiEvent] WiFi lost, reconnecting...");
+      Serial.println("[WiFiEvent] WiFi lost, reconnecting");
       isWifiConnect = 0;
       break;
     default:
@@ -64,11 +64,11 @@ void Communication::begin() {
   client.setCallback(callbackWrapper);
   wm.setConfigPortalBlocking(false);
   wm.setDarkMode(true);
+  isWebAPStart = 1;
   if (wm.autoConnect("EllPoolWiFi")) {
     Serial.println("WIFI connected");
   } else {
     Serial.println("Web AP running");
-    isWebAPStart = 1;
   }
 }
 void Communication::receiveFromDisplay() {
@@ -83,7 +83,7 @@ void Communication::receiveFromDisplay() {
 }
 void Communication::sendToNode() {
   while (!isEmpty(buffDataFromDisplay)) {
-    msgToNode = dequeue(buffDataFromDisplay);~~
+    msgToNode = dequeue(buffDataFromDisplay);
     isSended = 1;
     trasmitState = radio.transmit(msgToNode);
     if (trasmitState == RADIOLIB_ERR_NONE) {
@@ -105,15 +105,23 @@ void Communication::receiveFromNode() {
     receiveFlag = false;
     state = radio.readData(msgFromNode);
     if (state == RADIOLIB_ERR_NONE) {
-      if (!isFull(buffDataFromNode)) {
-        Serial.print("receive From Node: ");
-        Serial.println(msgFromNode);
-        enqueueData(buffDataFromNode, msgFromNode.c_str());
+      doc.clear();
+      deserializeJson(doc, msgFromNode);
+      if (doc.containsKey("SID")) {
+        if (doc["SID"].as<String>() == StationID) {
+          if (!isFull(buffDataFromNode)) {
+            Serial.print("receive From Node: ");
+            Serial.println(msgFromNode);
+            enqueueData(buffDataFromNode, msgFromNode.c_str());
+          }
+          if (!isFull(buffDataToServer)) {
+            enqueueData(buffDataToServer, msgFromNode.c_str());
+          }
+          msgFromNode = "";
+        } else {
+          msgFromNode = "";
+        }
       }
-      if (!isFull(buffDataToServer)) {
-        enqueueData(buffDataToServer, msgFromNode.c_str());
-      }
-      msgFromNode = "";
     }
   }
 }
@@ -158,6 +166,7 @@ void Communication::reconnectWifi() {
   if (millis() - timeOutReconnectWiFi > 20000 && isWifiConnect == 0) {
     timeOutReconnectWiFi = millis();
     if (isWebAPStart == 0) {
+      Serial.print("....");
       WiFi.disconnect();
       WiFi.reconnect();
     }

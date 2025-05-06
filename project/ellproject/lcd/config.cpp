@@ -1,6 +1,9 @@
 #include "config.h"
 int gpioPins[8] = { 19, 21, 3, 26, 1, 27, 22, 23 };
 
+String StationID = "TESTH6CT";
+
+
 //*********************** quản lý hồ****************
 Pool pool[10];
 void creatNewPool(int numberPool) {

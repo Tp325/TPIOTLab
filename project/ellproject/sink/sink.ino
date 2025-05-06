@@ -12,6 +12,7 @@ void setup() {
   xTaskCreatePinnedToCore(vtaskSendToServer, "taskSendToServer", 2048, NULL, 5, NULL, 1);
   xTaskCreatePinnedToCore(vtaskReceiveFromServer, "taskReceiveFromServer", 2048, NULL, 5, NULL, 1);
   xTaskCreatePinnedToCore(vtaskProcessWiFi, "taskProcessWiFi", 8192, NULL, 5, NULL, 1);
+  xTaskCreatePinnedToCore(vtaskProcessMQTT, "taskProcessMQTT", 2048, NULL, 5, NULL, 1);
   xTaskCreatePinnedToCore(vtaskSynchronize, "taskSynchronize", 2048, NULL, 5, NULL, 1);
   xTaskCreatePinnedToCore(vtaskBlocking, "taskBlocking", 4096, NULL, 5, NULL, 0);
   vTaskDelete(NULL);

@@ -3,7 +3,7 @@
 #include <Arduino.h>
 #include "CircularQueue.h"
 
-extern String stationID;
+extern String StationID;
 
 //******************LOra*****************
 #define Nss 21
