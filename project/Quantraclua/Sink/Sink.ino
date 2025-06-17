@@ -59,7 +59,7 @@ void loop() {
       Serial.println(receivedData);
 
       // Gửi dữ liệu lên MQTT
-      if (mqttClient.publish("ThoaiSonOrganic", receivedData.c_str())) {
+      if (mqttClient.publish("HondakiengiangSoil", receivedData.c_str())) {
         Serial.println("Dữ liệu đã được gửi lên MQTT thành công!");
       } else {
         Serial.println("Gửi dữ liệu lên MQTT thất bại!");
@@ -82,7 +82,7 @@ void setupWiFi() {
 void connectMQTT() {
   if (!mqttClient.connected()) {
     Serial.println("Đang kết nối với MQTT Broker...");
-    if (mqttClient.connect("ESP3re241", mqtt_user, mqtt_pass)) {
+    if (mqttClient.connect("ESP3re2421", mqtt_user, mqtt_pass)) {
       Serial.println(" Đã kết nối với MQTT Broker!");
     } else {
       Serial.print(" Thất bại với mã lỗi: ");

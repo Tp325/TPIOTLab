@@ -1,7 +1,8 @@
 #include <SoftwareSerial.h>
-SoftwareSerial mySerial(4, 5);
+SoftwareSerial mySerial(2, 3);
 unsigned char data[8];
 String dataReceive;
+char buffer[8] = {};
 int a = 0;
 unsigned short crc;
 unsigned short bufferCrc;
@@ -33,6 +34,15 @@ void setup() {
 }
 
 void loop() {
+  if (mySerial.available() >= 8) {
+    mySerial.readBytes(buffer, 8);
+    for (int i = 0; i < 8; i++) {
+      if ((byte)buffer[i] < 0x10) Serial.print("0");
+      Serial.print((byte)buffer[i], HEX);
+      Serial.print(" ");
+    }
+    Serial.println(" ");
+  }
   if (Serial.available()) {
     dataReceive = Serial.readString();
     data[a] = (char)strtol(dataReceive.c_str(), NULL, 16);
