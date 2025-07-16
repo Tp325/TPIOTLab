@@ -97,6 +97,11 @@ void Communication::analizeData() {
           }
         } else if (doc["is"].as<int>() == 1) {
           if (doc.containsKey("cm")) {
+            if (doc["cm"].as<String>() == "RS") {
+              haveToReset = 1;
+            } else {
+              haveToReset = 0;
+            }
           }
           if (doc.containsKey("ma")) {
             pool[IDOfPool].maxValue = doc["ma"].as<float>();

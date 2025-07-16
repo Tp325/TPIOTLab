@@ -12,11 +12,11 @@ RS485Sensor sensor;
 // unsigned long int countTime = 0;
 //*********************************************
 void setup() {
-  StationID = "TESTH6CT";
+  // StationID = "TESTH6CT";
   numberOfPool = 3;
-  createNewPool(1, VALVE_SUPPLY_1, VALVE_DRAIN_1, 0x11, 60);
-  createNewPool(2, VALVE_SUPPLY_2, VALVE_DRAIN_2, 0x22, 60);
-  createNewPool(3, VALVE_SUPPLY_3, VALVE_DRAIN_3, 0x33, 60);
+  createNewPool(1, VALVE_SUPPLY_1, VALVE_DRAIN_1, 0x11, 80);
+  createNewPool(2, VALVE_SUPPLY_2, VALVE_DRAIN_2, 0x22, 80);
+  createNewPool(3, VALVE_SUPPLY_3, VALVE_DRAIN_3, 0x33, 80);
   Serial.begin(9600);
   communication.begin();
   execution.begin();
@@ -27,18 +27,21 @@ void setup() {
   xTaskCreatePinnedToCore(vTaskExecution, "TaskExecution", 6144, NULL, 5, NULL, 0);
   xTaskCreatePinnedToCore(vTaskExecutionAutoRun, "TaskExecutionAutoRun", 6144, NULL, 5, NULL, 0);
   xTaskCreatePinnedToCore(vTaskReadSensor, "TaskReadSensor", 4096, NULL, 5, NULL, 1);
-  xTaskCreatePinnedToCore(vTaskPrintDebug, "TaskPrintDebug", 2048, NULL, 5, NULL, 0);
+  xTaskCreatePinnedToCore(vTaskBlocking, "TaskBlocking", 2048, NULL, 5, NULL, 0);
   vTaskDelete(NULL);
 }
 void loop() {
 }
-void vTaskPrintDebug(void *pvParameters) {
+void vTaskBlocking(void *pvParameters) {
   while (1) {
-    for (int i = 1; i <= numberOfPool; i++) {
-      Serial.printf("ID:%d\n autoStatus:%d\t stepOfAuto:%d\t inStatus:%d\t outStatus:%d\n", i, pool[i].autoStatus, pool[i].stepOfAuto, pool[i].inStatus, pool[i].outStatus);
-      Serial.printf("ID:%d\n muc nuoc:%f\t max:%f\t mid:%f\t min:%f\n", i, pool[i].mucnuoc, pool[i].maxValue, pool[i].midValue, pool[i].minValue);
-      Serial.println("________________________________");
+    if (isEmpty(buffDataToSink) && haveToReset == 1) {
+      ESP.restart();
     }
+    // for (int i = 1; i <= numberOfPool; i++) {
+    //   Serial.printf("ID:%d\n autoStatus:%d\t stepOfAuto:%d\t inStatus:%d\t outStatus:%d\n", i, pool[i].autoStatus, pool[i].stepOfAuto, pool[i].inStatus, pool[i].outStatus);
+    //   Serial.printf("ID:%d\n muc nuoc:%f\t max:%f\t mid:%f\t min:%f\n", i, pool[i].mucnuoc, pool[i].maxValue, pool[i].midValue, pool[i].minValue);
+    //   Serial.println("________________________________");
+    // }
     vTaskDelay(3000 / portTICK_PERIOD_MS);
   }
 }
@@ -142,7 +145,7 @@ void vTaskReadSensor(void *pvParameters) {
         pool[i].isSentSensorStatus = 0;
       }
       //***** for testing time respose***********
-      // countTime = millis();
+      // countTime = millis();`
       // isStartCount = 1;
       //****************************************
       vTaskDelay(1000 / portTICK_PERIOD_MS);

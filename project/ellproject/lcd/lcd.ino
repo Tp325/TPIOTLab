@@ -10,6 +10,7 @@ Button button;
 Storage storage;
 void setup() {
   creatNewPool(3);
+  Serial.begin(9600);
   communication.begin();
   screen.begin();
   storage.begin();
@@ -22,9 +23,18 @@ void setup() {
   xTaskCreate(vTaskAnalize, "TaskAnalize", 2048, NULL, 5, NULL);
   xTaskCreate(vtaskAnalizeDataToSink, "taskAnalizeDataToSink", 2048, NULL, 5, NULL);
   xTaskCreate(vtaskSaveToEEPROM, "taskSaveToEEPROM", 2048, NULL, 5, NULL);
+  xTaskCreatePinnedToCore(vtaskBlocking, "taskBlocking", 2048, NULL, 5, NULL, 0);
   vTaskDelete(NULL);
 }
 void loop() {
+}
+void vtaskBlocking(void *pvParameters) {
+  while (1) {
+    if (haveToReset == 1 ) {
+      ESP.restart();
+    }
+    vTaskDelay(3000 / portTICK_PERIOD_MS);
+  }
 }
 void vtaskButton(void *pvParameters) {
   button.begin();
@@ -92,10 +102,10 @@ void vtaskSensorDetect(void *parameter) {
   while (1) {
     if (digitalRead(SS_DETECT) == 1) {
       time = 0;
-      digitalWrite(LED_LCD, HIGH);
+      screen.onDisplay();
     } else {
       if (time >= 15)
-        digitalWrite(LED_LCD, LOW);
+        screen.sleepDisplay();
     }
     time++;
     vTaskDelay(1000 / portTICK_PERIOD_MS);
