@@ -59,7 +59,7 @@ void loop() {
       Serial.println(receivedData);
 
       // Gửi dữ liệu lên MQTT
-      if (mqttClient.publish("HondakiengiangSoil", receivedData.c_str())) {
+      if (mqttClient.publish("TestDemoCTUSent", receivedData.c_str())) {
         Serial.println("Dữ liệu đã được gửi lên MQTT thành công!");
       } else {
         Serial.println("Gửi dữ liệu lên MQTT thất bại!");
