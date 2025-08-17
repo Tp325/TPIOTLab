@@ -82,7 +82,7 @@ void setupWiFi() {
 void connectMQTT() {
   if (!mqttClient.connected()) {
     Serial.println("Đang kết nối với MQTT Broker...");
-    if (mqttClient.connect("ESP3re2421", mqtt_user, mqtt_pass)) {
+    if (mqttClient.connect("ESP3re242ds1", mqtt_user, mqtt_pass)) {
       Serial.println(" Đã kết nối với MQTT Broker!");
     } else {
       Serial.print(" Thất bại với mã lỗi: ");
