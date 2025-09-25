@@ -4,7 +4,7 @@
 #include "config.h"
 #define sleeptime 15 * 1000 * 60  // Giây
 Communication communication;
-Execution execution(2);
+Execution execution(6);
 Sensor sensor;
 String stationID = "aquaTestDemo";
 long long int time_4 = 0;

@@ -1,139 +1,111 @@
 #include "Sensor.h"
-#include "Arduino.h"
-SoftwareSerial mySerial(16, 17);
-soild7in1 ::soild7in1(int RX, int TX) {
-  this->RX = RX;
-  this->TX = TX;
+static SensorCfg sensors[] = {
+  { 0x01, 0x0013, 9600, "Temperature" },  // 0
+  { 0x01, 0x0012, 9600, "Humidity" },     // 1
+  { 0x01, 0x0015, 9600, "EC" },           // 2
+  { 0x01, 0x0006, 9600, "PH" },           // 3
+  { 0x01, 0x001E, 9600, "Ni" },           // 4
+  { 0x01, 0x001F, 9600, "Photpho" },      // 5
+  { 0x01, 0x0020, 9600, "Kali" },         // 6
+  { 0x50, 0x0034, 115200, "distance" }    // 7
+};
+Sensor::Sensor(int BatSense3V3,
+               SoftwareSerial *comunication,
+               ModbusMaster *node)
+  : kalmanTem(2, 2, 0.01),
+    kalmanHum(2, 2, 0.01),
+    kalmanEC(2, 2, 0.01),
+    kalmanPH(2, 2, 0.01),
+    kalmanNi(2, 2, 0.01),
+    kalmanPhotpho(2, 2, 0.01),
+    kalmanKali(2, 2, 0.01),
+    kalmandistance(2, 2, 0.01) {
+  this->BatSense3V3 = BatSense3V3;
+  this->comunication = comunication;
+  this->node = node;
 }
-void soild7in1 ::begin(long baurate) {
-  mySerial.begin(baurate);
+void Sensor::begin() {
+  pinMode(BatSense3V3, INPUT);
+  node->begin(sensors[0].slaveID, *comunication);
 }
-int soild7in1::getSensorValue(byte dataForSend[8], uint8_t sizeOfData,
-                              uint8_t possion) {
-  mySerial.write(dataForSend, 8);
-  delay(200);
-  if (mySerial.available()) {
-    //    byte response[sizeOfData - 1];
-    mySerial.readBytes(receiveData, sizeOfData - 1);
-    return receiveData[possion] << 8 | receiveData[possion + 1];
-  } else {
-    Serial.println("EROR");
-    return 0;
+void Sensor::getValueOfSensor() {
+  for (int i = 0; i < 5; i++) {
+    tempRaw[i] = getSensorValue(sensors[0].slaveID, sensors[0].baud, sensors[0].regAddr, 3) / 10.0;
+    delay(300);
+    humRaw[i] = getSensorValue(sensors[1].slaveID, sensors[1].baud, sensors[1].regAddr, 3) / 10.0;
+    delay(300);
+    ECRaw[i] = getSensorValue(sensors[2].slaveID, sensors[2].baud, sensors[2].regAddr, 3) / 10.0;
+    delay(300);
+    PHRaw[i] = getSensorValue(sensors[3].slaveID, sensors[3].baud, sensors[3].regAddr, 3) / 100.0;
+    delay(300);
+    niRaw[i] = getSensorValue(sensors[4].slaveID, sensors[4].baud, sensors[4].regAddr, 3);
+    delay(300);
+    photphoRaw[i] = getSensorValue(sensors[5].slaveID, sensors[5].baud, sensors[5].regAddr, 3);
+    delay(300);
+    kaliRaw[i] = getSensorValue(sensors[6].slaveID, sensors[6].baud, sensors[6].regAddr, 3);
+    delay(300);
+    distanceRaw[i] = 40 - (getSensorValue(sensors[7].slaveID, sensors[7].baud, sensors[7].regAddr, 3) / 10.0);
+    delay(300);
   }
 }
-int soild7in1 ::getHumidity() {
-  return getSensorValue(_queryTemHum, 10, 3);
-}
-int soild7in1 ::getTemperature() {
-  return getSensorValue(_queryTemHum, 10, 5);
-}
-int soild7in1 ::getPH() {
-  return getSensorValue(_queryPH, 8, 3);
-}
-int soild7in1 ::getNito() {
-  return getSensorValue(_queryN, 8, 3);
-}
-int soild7in1 ::getPhotpho() {
-  return getSensorValue(_queryP, 8, 3);
-}
-int soild7in1 ::getKali() {
-  return getSensorValue(_queryK, 8, 3);
-}
-int soild7in1 ::getEC() {
-  return getSensorValue(_queryEC, 8, 3);
-}
-
-
-soild3in1::soild3in1(int RX, int TX) {
-  this->RX = RX;
-  this->TX = TX;
-}
-void soild3in1::begin(long baurate) {
-  mySerial.begin(baurate);
-}
-int soild3in1::getSensorValue(byte dataForSend[8], uint8_t sizeOfData,
-                              uint8_t possion) {
-  mySerial.write(dataForSend, 8);
-  delay(200);
-  if (mySerial.available()) {
-    //    byte response[sizeOfData - 1];
-    mySerial.readBytes(receiveData, sizeOfData - 1);
-    return receiveData[possion] << 8 | receiveData[possion + 1];
-  }  else {
-    Serial.println("EROR");
-    return 0;
+float Sensor::median(float numbers[], int size) {
+  if (size <= 0) return 0;
+  float temp[size];
+  for (int i = 0; i < size; i++) {
+    temp[i] = numbers[i];
+  }
+  std::sort(temp, temp + size);
+  if (size % 2 == 1) {
+    return temp[size / 2];
+  } else {
+    return (temp[size / 2 - 1] + temp[size / 2]) / 2.0;
   }
 }
 
-int soild3in1 ::getHumidity() {
-  return getSensorValue(_queryTemHum, 10, 3);
-}
-int soild3in1 ::getTemperature() {
-  return getSensorValue(_queryTemHum, 10, 5);
-}
-int soild3in1 ::getPH() {
-  return getSensorValue(_queryPH, 8, 3);
-}
-
-distance::distance(int RX, int TX) {
-  this->RX = RX;
-  this->TX = TX;
-}
-void distance::begin(long baurate) {
-  mySerial.begin(baurate);
-}
-int distance::getSensorValue(byte dataForSend[8], uint8_t sizeOfData,
-                             uint8_t possion) {
-  mySerial.write(dataForSend, 8);
-  delay(200);
-  if (mySerial.available()) {
-    //    //    byte response[sizeOfData - 1];
-    mySerial.readBytes(receiveData, sizeOfData - 1);
-    return receiveData[possion] << 8 | receiveData[possion + 1];
-  } else {
-    Serial.println("EROR");
-    return 0;
+int Sensor::getSensorValue(uint8_t slaveID, uint32_t baudrate, uint16_t reg, uint8_t reTries) {
+  comunication->flush();
+  comunication->end();
+  comunication->begin(baudrate);
+  comunication->setTimeout(2000);
+  node->begin(slaveID, *comunication);
+  for (uint8_t t = 0; t < reTries; t++) {
+    if (node->readHoldingRegisters(reg, 1) == node->ku8MBSuccess) {
+      uint16_t value = node->getResponseBuffer(0);
+      node->clearResponseBuffer();
+      Serial.println(value);
+      return value;
+    } else {
+      Serial.print("Retry: ");
+      Serial.println(t + 1);
+    }
+    delay(500);
   }
+  return 0;
 }
-int distance::getDistance() {
-  return getSensorValue(_queryDis, 8, 3);
+float Sensor::getTemperature() {
+  return kalmanTem.updateEstimate(median(tempRaw, 5));
 }
-URM08::URM08(int RX, int TX) {
-  this->RX = RX;
-  this->TX = TX;
+float Sensor::getHumidity() {
+  return kalmanHum.updateEstimate(median(humRaw, 5));
 }
-void URM08::begin(long baurate) {
-  mySerial.begin(baurate);
+float Sensor::getEC() {
+  return kalmanEC.updateEstimate(median(ECRaw, 5));
 }
-int URM08::getSensorValue(byte dataForSend[8], uint8_t sizeOfData,
-                          uint8_t possion) {
-  mySerial.write(dataForSend, 8);
-  delay(200);
-  if (mySerial.available()) {
-    mySerial.readBytes(receiveData, sizeOfData - 1);
-    return receiveData[possion] << 8 | receiveData[possion + 1];
-  } else {
-    Serial.println("EROR");
-    return 0;
-  }
+float Sensor::getPH() {
+  return kalmanPH.updateEstimate(median(PHRaw, 5));
 }
-int URM08::getDistance() {
-  return getSensorValue(distanceArray, 8, 5);
+float Sensor::getNito() {
+  return kalmanNi.updateEstimate(median(niRaw, 5));
 }
-float URM08::getTemperature() {
-  return getSensorValue(temperatureArray, 8, 5) / 10.0;
+float Sensor::getPhotpho() {
+  return kalmanPhotpho.updateEstimate(median(photphoRaw, 5));
 }
-int URM08::setAddress(byte newAddress) {
-  byte addressformat[8] = { 0x55, 0xAA, 0xAB, 0x01, 0x55, newAddress, 0x12 };
-  for (int i = 0; i <= 7; i++) {
-    mySerial.write(addressformat[i]);
-  }
-  if (mySerial.available()) {
-    mySerial.readBytes(receiveData, 6);
-  }
-  if (receiveData[5] == 0xCC) {
-    return 1;
-  } else {
-    return 0;
-  }
+float Sensor::getKali() {
+  return kalmanKali.updateEstimate(median(kaliRaw, 5));
+}
+float Sensor::getDistance() {
+  return kalmandistance.updateEstimate(median(distanceRaw, 5));
+}
+float Sensor::getPinVoltage() {
+  return ((analogRead(BatSense3V3) * 3.3) / 4095.0) * 1.27;
 }

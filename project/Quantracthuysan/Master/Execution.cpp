@@ -6,7 +6,6 @@ Execution::Execution(int numberOfDevice) {
   }
 }
 void Execution::begin() {
-
   pinMode(SR_MR_PIN, OUTPUT);
   pinMode(SR_OE_PIN, OUTPUT);
   pinMode(SR_LATCH_PIN, OUTPUT);

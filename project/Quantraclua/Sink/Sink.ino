@@ -1,114 +1,90 @@
-#include <WiFiManager.h>
-#include <strings_en.h>
-#include <wm_consts_en.h>
-#include <wm_strings_en.h>
-#include <wm_strings_es.h>
-#include <PubSubClient.h>
-#include <SPI.h>
-#include <LoRa.h>
-// Thông tin MQTT Broker
-const char* mqtt_server = "dev.iotlab.net.vn";
-const int mqtt_port = 1883;
-const char* mqtt_user = "api1@Iotlab";
-const char* mqtt_pass = "Iotlab@2023";
-
-// Các chân LoRa
-#define SS 5
-#define RST 4
-// #define RST 13
-#define DIO0 2
-
-bool isWifiConnect = 0;
-long int timeOutReconnectWiFi = 0;
-// Tạo client WiFi và MQTT
-WiFiClient espClient;
-PubSubClient mqttClient(espClient);
-
+#include "Communication.h"
+#include "config.h"
+Communication communication;
 void setup() {
   Serial.begin(9600);
-  // Khởi động LoRa
-  LoRa.setPins(SS, RST, DIO0);
-  if (!LoRa.begin(433E6)) {  // Tần số 433 MHz
-    Serial.println("Khởi động LoRa thất bại!");
-    while (1)
-      ;
-  }
-  Serial.println("LoRa đã sẵn sàng để nhận dữ liệu!");
-
-  // Kết nối WiFi
-  setupWiFi();
-  // Kết nối MQTT
-  mqttClient.setServer(mqtt_server, mqtt_port);
-  connectMQTT();
+  communication.begin();
+  manager.begin();
+  //xTaskCreatePinnedToCore(vTaskPrintDebug, "TaskPrintDebug", 1024, NULL, 5, NULL, 1);
+  xTaskCreatePinnedToCore(vtaskSendToNode, "taskSendToNode", 6144, NULL, 5, NULL, 1);
+  xTaskCreatePinnedToCore(vtaskReceiveFromNode, "taskReceiveFromNode", 6144, NULL, 5, NULL, 1);
+  xTaskCreatePinnedToCore(vtaskSendToServer, "taskSendToServer", 4096, NULL, 5, NULL, 1);
+  xTaskCreatePinnedToCore(vtaskReceiveFromServer, "taskReceiveFromServer", 4096, NULL, 5, NULL, 1);
+  xTaskCreatePinnedToCore(vtaskStorage, "taskStorage", 4096, NULL, 5, NULL, 1);
+  xTaskCreatePinnedToCore(vtaskAnalize, "taskAnalize", 4096, NULL, 5, NULL, 1);
+  xTaskCreatePinnedToCore(vtaskProcess, "taskProcess", 4096, NULL, 5, NULL, 0);
+  xTaskCreatePinnedToCore(vtaskBlocking, "taskBlocking", 4096, NULL, 5, NULL, 0);
+  delay(4000);
+  vTaskDelete(NULL);
 }
 
 void loop() {
-  reconnectWifi();
-  if (isWifiConnect == 1) {
-    connectMQTT();
-    mqttClient.loop();
-    // Kiểm tra xem có gói dữ liệu nào từ LoRa
-    int packetSize = LoRa.parsePacket();
-    if (packetSize) {
-      String receivedData = "";
-      while (LoRa.available()) {
-        receivedData += (char)LoRa.read();
-      }
-
-      Serial.print("Dữ liệu nhận được từ LoRa: ");
-      Serial.println(receivedData);
-
-      // Gửi dữ liệu lên MQTT
-      if (mqttClient.publish("TestDemoCTUSent", receivedData.c_str())) {
-        Serial.println("Dữ liệu đã được gửi lên MQTT thành công!");
-      } else {
-        Serial.println("Gửi dữ liệu lên MQTT thất bại!");
-      }
+}
+// // void vTaskPrintDebug(void *pvParameters) {
+// //   size_t freeHeap = xPortGetFreeHeapSize();
+// //   while (1) {
+// //     printf("Free heap size: %u bytes\n", (unsigned int)freeHeap);
+// //     vTaskDelay(3000 / portTICK_PERIOD_MS);
+// //   }
+// // }
+void vtaskSendToNode(void *pvParameters) {
+  while (1) {
+    if (communication.mode == "installation") {
+      communication.sendToNode(String(String("{\"SS\":0,\"SID\":") + String(communication.SID) + String("}")));
+      vTaskDelay(500 / portTICK_PERIOD_MS);
     }
+    communication.sendToNode();
+    vTaskDelay(10 / portTICK_PERIOD_MS);
   }
 }
-
-// Hàm kết nối Wi-Fi
-void setupWiFi() {
-  WiFi.onEvent(onWiFiEvent);
-  WiFi.mode(WIFI_STA);
-  Serial.print("Đang kết nối với WiFi...");
-  WiFiManager wm;
-  bool res;
-  res = wm.autoConnect("QuanTracLua");
-}
-
-// Hàm kết nối MQTT
-void connectMQTT() {
-  if (!mqttClient.connected()) {
-    Serial.println("Đang kết nối với MQTT Broker...");
-    if (mqttClient.connect("ESP3re242ds1", mqtt_user, mqtt_pass)) {
-      Serial.println(" Đã kết nối với MQTT Broker!");
-    } else {
-      Serial.print(" Thất bại với mã lỗi: ");
-      Serial.println(mqttClient.state());
-      delay(2000);
+void vtaskStorage(void *pvParameters) {
+  uint16_t IDMissingNode = 0;
+  while (1) {
+    // manager.printNodes();
+    IDMissingNode = manager.checkingTimeOut();
+    if (IDMissingNode != 0) {
+      communication.sendToServer(String(String("{\"SS\":0,\"SID\":") + String(communication.SID) + String(",\"ID\":") + String(IDMissingNode) + String(",\"CM\":\"MS\"}")));
+      manager.removeNode(IDMissingNode);
+      manager.printNodes();
     }
+    vTaskDelay(10000 / portTICK_PERIOD_MS);
   }
 }
-void reconnectWifi() {
-  if (millis() - timeOutReconnectWiFi > 20000 && isWifiConnect == 0) {
-    timeOutReconnectWiFi = millis();
-    WiFi.disconnect();
-    WiFi.reconnect();
+void vtaskReceiveFromNode(void *pvParameters) {
+  while (1) {
+    communication.receiveFromNode();
+    vTaskDelay(10 / portTICK_PERIOD_MS);
   }
 }
-void onWiFiEvent(WiFiEvent_t event) {
-  switch (event) {
-    case ARDUINO_EVENT_WIFI_STA_GOT_IP:
-      Serial.println("[WiFiEvent] Connected to WiFi!");
-      isWifiConnect = 1;
-      break;
-    case ARDUINO_EVENT_WIFI_STA_DISCONNECTED:
-      Serial.println("[WiFiEvent] WiFi lost, reconnecting...");
-      isWifiConnect = 0;
-      break;
-    default:
-      break;
+void vtaskReceiveFromServer(void *pvParameters) {
+  while (1) {
+    communication.receiveFromServer();
+    vTaskDelay(20 / portTICK_PERIOD_MS);
+  }
+}
+void vtaskSendToServer(void *pvParameters) {
+  while (1) {
+    communication.sendToServer();
+    vTaskDelay(20 / portTICK_PERIOD_MS);
+  }
+}
+void vtaskAnalize(void *pvParameters) {
+  while (1) {
+    communication.analizeData();
+    vTaskDelay(20 / portTICK_PERIOD_MS);
+  }
+}
+void vtaskProcess(void *pvParameters) {
+  while (1) {
+    communication.process();
+    vTaskDelay(500 / portTICK_PERIOD_MS);
+  }
+}
+void vtaskBlocking(void *pvParameters) {
+  while (1) {
+    communication.blocking();
+    if (communication.haveToReset == 1)
+      ESP.restart();
+    vTaskDelay(3000 / portTICK_PERIOD_MS);
   }
 }
