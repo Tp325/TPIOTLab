@@ -8,9 +8,9 @@
 ModbusMaster node;
 Communication communication;
 Excution excution;
-SoftwareSerial mySerial(16, 17);
+// SoftwareSerial mySerial(16, 17);
 DynamicJsonDocument doc3(1024);
-Sensor sensor(26, &mySerial, &node);
+Sensor sensor(26, &Serial2, &node);
 String firstMsg = "";
 TaskHandle_t taskHandleSendToSink = NULL;
 TaskHandle_t taskHandleReceiveFromSink = NULL;
@@ -20,12 +20,12 @@ TaskHandle_t taskHandleScanSink = NULL;
 
 void setup() {
   Serial.begin(9600);
-  mySerial.begin(9600);
+  // mySerial.begin(9600);
+  Serial2.begin(9600, SERIAL_8N1, 16, 17);
   manager.begin();
   communication.begin();
   excution.begin();
   sensor.begin();
-
   excution.offSensor(Sensor1);
   excution.offSensor(Sensor2);
   excution.setLed(1, 0, 0);
@@ -52,6 +52,8 @@ void setup() {
     delay(200);
     esp_deep_sleep_start();
   }
+
+  timeCounter = millis();
 
   xTaskCreatePinnedToCore(vtaskSendToSink, "taskSendToSink", 4096, NULL, 5, &taskHandleSendToSink, 1);
   xTaskCreatePinnedToCore(vtaskReceiveFromSink, "taskReceiveFromSink", 4096, NULL, 5, &taskHandleReceiveFromSink, 1);
@@ -156,6 +158,8 @@ void getDataInNormalMode() {
   delay(timeStartSensor);
   blinkLed(2, 3);
   sensor.getValueOfSensor();
+  excution.offSensor(Sensor1);
+  excution.offSensor(Sensor2);
   saveDataToRam();
   blinkLed(3, 1);
   delay(500);

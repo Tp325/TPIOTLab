@@ -7,9 +7,9 @@
 ModbusMaster node;
 Communication communication;
 Excution excution;
-SoftwareSerial mySerial(16, 17);
+// SoftwareSerial mySerial(16, 17);
 DynamicJsonDocument doc3(1024);
-Sensor sensor(26, &mySerial, &node);
+Sensor sensor(26, &Serial2, &node);
 String firstMsg = "";
 TaskHandle_t taskHandleSendToSink = NULL;
 TaskHandle_t taskHandleReceiveFromSink = NULL;
@@ -23,6 +23,7 @@ void getDataInCheckingPin();
 void setup() {
   //begin
   Serial.begin(9600);
+  Serial2.begin(9600, SERIAL_8N1, 16, 17);
   manager.begin();
   communication.begin();
   excution.begin();
@@ -146,33 +147,27 @@ void vtaskBlocking(void *pvParameters) {
     vTaskDelay(1000 / portTICK_PERIOD_MS);
   }
 }
+void saveDataToRam() {
+  enviromentParameter.windSpeed = sensor.getWindSpeed();
+  enviromentParameter.windDirection = sensor.getWindDirection();
+  enviromentParameter.airTemperature = sensor.getAirTemperature();
+  enviromentParameter.airHumidity = sensor.getAirHumidity();
+  enviromentParameter.airPressure = sensor.getAirPressure();
+  enviromentParameter.vaporPressureDeficit = sensor.getVaporPressureDeficit();
+  enviromentParameter.rain = sensor.getRain();
+  enviromentParameter.waterTem = sensor.getWaterTem();
+}
 
-void getDataInNormalMode() {
-  delay(timeStartSensor);
-  for (int i = 0; i < 2; i++) {
-    excution.setLed(1, 1, 0);
-    enviromentParameter.windSpeed = sensor.getWindSpeed();
-    delay(300);
-    enviromentParameter.windDirection = sensor.getWindDirection();
-    delay(300);
-    enviromentParameter.airTemperature = sensor.getAirTemperature();
-    delay(300);
-    enviromentParameter.airHumidity = sensor.getAirHumidity();
-    delay(300);
-    enviromentParameter.airPressure = sensor.getAirPressure();
-    delay(300);
-    enviromentParameter.vaporPressureDeficit = sensor.getVaporPressureDeficit();
-    delay(300);
-    enviromentParameter.rain = sensor.getRain();
-    delay(300);
-    enviromentParameter.waterTem = sensor.getWaterTem();
-    excution.setLed(1, 0, 0);
+void blinkLed(int numberOfLed, int time) {
+  for (int i = 0; i < time; i++) {
+    excution.setLed(1, numberOfLed == 2 ? 1 : 0, numberOfLed == 3 ? 1 : 0);
+    delay(200);
+    excution.setLed(1, numberOfLed == 2 ? 1 : 0, numberOfLed == 3 ? 1 : 0);
     delay(200);
   }
-  excution.setLed(1, 0, 1);
-  excution.offSensor(Sensor1);
-  excution.offSensor(Sensor2);
-  delay(500);
+}
+
+void saveDataToSink() {
   enviromentParameter.pin = sensor.readBat();
   doc3.clear();
   doc3["SS"] = 0;
@@ -189,7 +184,17 @@ void getDataInNormalMode() {
   doc3["Pin"] = enviromentParameter.pin;
   serializeJson(doc3, firstMsg);
   communication.sendToSink(firstMsg);
-  Serial.println(firstMsg);
+}
+void getDataInNormalMode() {
+  delay(timeStartSensor);
+  blinkLed(2, 3);
+  sensor.getValueOfSensor();
+  excution.offSensor(Sensor1);
+  excution.offSensor(Sensor2);
+  saveDataToRam();
+  blinkLed(3, 1);
+  delay(500);
+  saveDataToSink();
   delay(200);
   excution.setLed(1, 0, 0);
 }

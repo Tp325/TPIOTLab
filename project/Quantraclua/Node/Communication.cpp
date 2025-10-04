@@ -7,7 +7,7 @@ int trasmitState;
 volatile bool receiveFlag = false;
 bool isSended;
 void setReceiveFlag() {
-  ////Serial.println("flag");
+  //Serial.println("flag");
   receiveFlag = true;
   if (isSended == 1) {
     receiveFlag = false;
@@ -30,19 +30,19 @@ Communication::Communication(uint16_t sensorID,
 void Communication::begin() {
   state = radio.begin(carrierFrequency, bandwidth, spreadingFactor, codingRate, syncWord, outputPower, preambleLength, amplifierGain);
   if (state == RADIOLIB_ERR_NONE) {
-    //Serial.println("success!");
+    Serial.println("success!");
   } else {
-    //Serial.print("failed, code ");
-    //Serial.println(state);
+    Serial.print("failed, code ");
+    Serial.println(state);
   }
   radio.setPacketReceivedAction(setReceiveFlag);
-  //Serial.print(F("[SX1278] Starting to listen ... "));
+  Serial.print(F("[SX1278] Starting to listen ... "));
   state = radio.startReceive();
   if (state == RADIOLIB_ERR_NONE) {
-    //Serial.println(F("success!"));
+    Serial.println(F("success!"));
   } else {
-    //Serial.print(F("failed, code "));
-    //Serial.println(state);
+    Serial.print(F("failed, code "));
+    Serial.println(state);
   }
   stationID = manager.loadFromEEPROM();
 }
@@ -51,12 +51,12 @@ bool Communication ::scanNewSink() {
     isSended = 1;
     trasmitState = radio.transmit(String(String("{\"SS\":0,\"ID\":") + String(sensorID) + String(",\"CM\":\"WTJN\"}")).c_str());
     if (trasmitState == RADIOLIB_ERR_NONE) {
-      //Serial.print("send to sink: ");
-      //Serial.println(String(String("{\"SS\":0,\"ID\":") + String(sensorID) + String(",\"CM\":\"WTJN\"}")));
-      //Serial.println("transmission finished!");
+      Serial.print("send to sink: ");
+      Serial.println(String(String("{\"SS\":0,\"ID\":") + String(sensorID) + String(",\"CM\":\"WTJN\"}")));
+      Serial.println("transmission finished!");
     } else {
-      //Serial.print("failed, code ");
-      //Serial.println(state);
+      Serial.print("failed, code ");
+      Serial.println(state);
     }
     vTaskDelay(10 / portTICK_PERIOD_MS);
     state = radio.startReceive();
@@ -73,12 +73,12 @@ void Communication::sendToSinkWithACK() {
       isSended = 1;
       trasmitState = radio.transmit(msgToSink);
       if (trasmitState == RADIOLIB_ERR_NONE) {
-        //Serial.print("send to sink: ");
-        //Serial.println(msgToSink);
-        //Serial.println("transmission finished!");
+        Serial.print("send to sink: ");
+        Serial.println(msgToSink);
+        Serial.println("transmission finished!");
       } else {
-        //Serial.print("failed, code ");
-        //Serial.println(state);
+        Serial.print("failed, code ");
+        Serial.println(state);
       }
       isReceiveACK = 0;
       isWaitingACK = 1;
@@ -87,7 +87,7 @@ void Communication::sendToSinkWithACK() {
       state = radio.startReceive();
     }
     if (millis() - timeOutACK >= 10000) {
-      //Serial.println("retry send to sink");
+      Serial.println("retry send to sink");
       tryToSend++;
       isReceiveACK = 1;
       timeOutACK = millis();
@@ -106,7 +106,7 @@ void Communication::sendToSink(String msg) {
 bool Communication::checkingACK(DynamicJsonDocument document) {
   if (!document.containsKey("CM")) return 0;
   if (isScanningNewSink == 1 && document["CM"].as<String>() == "ACK") {
-    //Serial.println("receive ACK");
+    Serial.println("receive ACK");
     manager.clearUint16();
     if (document.containsKey("SID")) {
       stationID = document["SID"].as<uint16_t>();
@@ -119,7 +119,7 @@ bool Communication::checkingACK(DynamicJsonDocument document) {
     timeOutACK = millis();
     return 1;
   } else if (document["CM"].as<String>() == "ACK" && document.containsKey("SS") && document["SS"].as<int>() == 0) {
-    //Serial.println("receive ACK");
+    Serial.println("receive ACK");
     isScanningNewSink = 0;
     tryToSend = 0;
     isReceiveACK = 1;
@@ -150,8 +150,8 @@ void Communication::receiveFromSink() {
               }
             }
           }
-          //Serial.print("receive From sink: ");
-          //Serial.println(msgFromSink);
+          Serial.print("receive From sink: ");
+          Serial.println(msgFromSink);
           if (!isFull(buffDataFromSink) && doc["CM"].as<String>() != "ACK") {
             enqueueData(buffDataFromSink, msgFromSink.c_str());
           }

@@ -15,7 +15,7 @@ static SensorCfg sensors[] = {
 };
 
 Sensor::Sensor(int BatSense3V3,
-               SoftwareSerial *comunication,
+               HardwareSerial *comunication,
                ModbusMaster *node) {
   this->BatSense3V3 = BatSense3V3;
   this->comunication = comunication;
@@ -28,11 +28,50 @@ void Sensor::begin() {
   Serial.println(lastRain);
   node->begin(sensors[0].slaveID, *comunication);
 }
+void Sensor::getValueOfSensor() {
+  for (int i = 0; i < 5; i++) {
+    windSRaw[i] = getSensorValue(sensors[0].slaveID, sensors[0].baud, sensors[0].regAddr, 3) / 10.0;
+    Serial.print("wind speed: ");
+    Serial.println(windSRaw[i]);
+    delay(300);
+    windDRaw[i] = getSensorValue(sensors[1].slaveID, sensors[1].baud, sensors[1].regAddr, 3) / 10;
+    Serial.print("wind direction: ");
+    Serial.println(windDRaw[i]);
+    delay(300);
+    airTemRaw[i] = getSensorValue(sensors[2].slaveID, sensors[2].baud, sensors[2].regAddr, 3) / 10.0;
+    Serial.print("air Tem: ");
+    Serial.println(airTemRaw[i]);
+    delay(300);
+    airHumRaw[i] = getSensorValue(sensors[3].slaveID, sensors[3].baud, sensors[3].regAddr, 3) / 10.0;
+    Serial.print("air Hum: ");
+    Serial.println(airHumRaw[i]);
+    delay(300);
+    airPressureRaw[i] = getSensorValue(sensors[4].slaveID, sensors[4].baud, sensors[4].regAddr, 3) / 10.0;
+    Serial.print("air Pressure: ");
+    Serial.println(airPressureRaw[i]);
+    delay(300);
+    rainRaw[i] = getSensorValue(sensors[10].slaveID, sensors[10].baud, sensors[10].regAddr, 3);
+    Serial.print("rain: ");
+    Serial.println(rainRaw[i]);
+    delay(300);
+    waterTemRaw[i] = getSensorValue(sensors[11].slaveID, sensors[11].baud, sensors[11].regAddr, 3) / 10.0;
+    Serial.print("water tem: ");
+    Serial.println(waterTemRaw[i]);
+    delay(300);
+    this->es = 0.6108 * exp((17.27 * airTemRaw[i]) / (237.317 + airTemRaw[i]));
+    getVaporPressureDeficitRaw[i] = (es * (1 - airHumRaw[i] / 100));
+    Serial.print("VaporPressureDeficitRaw: ");
+    Serial.println(getVaporPressureDeficitRaw[i]);
+    delay(300);
+  }
+}
 int Sensor::getSensorValue(uint8_t slaveID, uint32_t baudrate, uint16_t reg, uint8_t reTries) {
   comunication->flush();
   comunication->end();
   comunication->begin(baudrate);
-  comunication->setTimeout(2000);
+  comunication->begin(baudrate, SERIAL_8N1, 16, 17);
+  delay(200);
+  // comunication->setTimeout(2000);
   node->begin(slaveID, *comunication);
   for (uint8_t t = 0; t < reTries; t++) {
     if (node->readHoldingRegisters(reg, 1) == node->ku8MBSuccess) {
@@ -49,10 +88,10 @@ int Sensor::getSensorValue(uint8_t slaveID, uint32_t baudrate, uint16_t reg, uin
   return 0;
 }
 float Sensor::getWindSpeed() {
-  return getSensorValue(sensors[0].slaveID, sensors[0].baud, sensors[0].regAddr, 3) / 10.0;
+  return emaWindS.update(median(windSRaw, 5));
 }
 String Sensor::getWindDirection() {
-  int angle = getSensorValue(sensors[1].slaveID, sensors[1].baud, sensors[1].regAddr, 3) / 10;
+  int angle = emaWindD.update(median(windDRaw, 5));
   if (angle >= 0 && angle <= 45)
     return "North";
   else if (angle > 45 && angle <= 90)
@@ -72,17 +111,21 @@ String Sensor::getWindDirection() {
 }
 
 float Sensor::getAirTemperature() {
-  return getSensorValue(sensors[2].slaveID, sensors[2].baud, sensors[2].regAddr, 3) / 10.0;
+  // return emaAirTem.update(median(airTemRaw, 5));
+  return median(airTemRaw, 5);
 }
 float Sensor::getAirHumidity() {
-  return getSensorValue(sensors[3].slaveID, sensors[3].baud, sensors[3].regAddr, 3) / 10.0;
+  // return emaAirHum.update(median(airHumRaw, 5));
+  return median(airHumRaw, 5);
+
 }
 float Sensor::getAirPressure() {
-  return getSensorValue(sensors[4].slaveID, sensors[4].baud, sensors[4].regAddr, 3) / 10.0;
+  // return emaAirPressure.update(median(airPressureRaw, 5));
+  return median(airPressureRaw, 5);
 }
 float Sensor::getVaporPressureDeficit() {
-  this->es = 0.6108 * exp((17.27 * getAirTemperature()) / (237.317 + getAirTemperature()));
-  return (es * (1 - getAirHumidity() / 100));
+  // return emaVaporPressureDeficit.update(median(getVaporPressureDeficitRaw, 5));
+  return median(getVaporPressureDeficitRaw, 5);
 }
 float Sensor::getLight() {
   uint32_t high = (uint32_t)getSensorValue(sensors[5].slaveID, sensors[5].baud, sensors[5].regAddr, 3);
@@ -99,14 +142,16 @@ float Sensor::getPM_10() {
   return getSensorValue(sensors[9].slaveID, sensors[9].baud, sensors[9].regAddr, 3) / 10.0;
 }
 float Sensor::getRain() {
-  uint16_t bufferRain = getSensorValue(sensors[10].slaveID, sensors[10].baud, sensors[10].regAddr, 3);
+  uint16_t bufferRain = median(rainRaw, 5);
+  // uint16_t bufferRain = emaRain.update(median(rainRaw, 5));
   EEPROM.writeUShort(ADDR2, bufferRain);
   EEPROM.commit();
   return (bufferRain / 10.0 - lastRain / 10.0) / 17.0;
 }
 
 float Sensor::getWaterTem() {
-  return getSensorValue(sensors[11].slaveID, sensors[11].baud, sensors[11].regAddr, 3) / 10.0;
+  // return emaWaterTem.update(median(waterTemRaw, 5));
+  return median(waterTemRaw, 5);
 }
 
 float Sensor::readVotage(int analogPin) {
@@ -117,4 +162,17 @@ float Sensor::readBat() {
   Serial.print("Voltage: ");
   Serial.println(readVotage(BatSense3V3));
   return readVotage(BatSense3V3) * 1.27;
+}
+float Sensor::median(float numbers[], int size) {
+  if (size <= 0) return 0;
+  float temp[size];
+  for (int i = 0; i < size; i++) {
+    temp[i] = numbers[i];
+  }
+  std::sort(temp, temp + size);
+  if (size % 2 == 1) {
+    return temp[size / 2];
+  } else {
+    return (temp[size / 2 - 1] + temp[size / 2]) / 2.0;
+  }
 }

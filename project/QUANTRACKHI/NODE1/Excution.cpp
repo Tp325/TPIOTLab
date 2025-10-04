@@ -18,10 +18,13 @@ void Excution::begin() {
 }
 
 void Excution::onSensor(int sensor) {
-  digitalWrite(sensor, HIGH);
+  // digitalWrite(sensor, HIGH);
+  digitalWrite(sensor, LOW);
+
 }
 void Excution::offSensor(int sensor) {
-  digitalWrite(sensor, LOW);
+  // digitalWrite(sensor, LOW);
+  digitalWrite(sensor, HIGH);
 }
 String Excution::checkingMode() {
   if (isSwitchMode != digitalRead(this->switchPin)) {
