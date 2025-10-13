@@ -103,8 +103,10 @@ public:
   // Node thủy sản (loại = 2)
   // 2 × 256 → 512
   // Khoảng: 512 – 767
-  // Loại kế tiếp (3)
-  // Khoảng: 768 – 1023222
+  // Node khí (3)
+  // Khoảng: 768 – 1023
+
+ 
   Communication(uint16_t SID = 5, String clientmqtt = "Sink005",
                 String topicReceive = "Sink005Recieve", String topicSend = "Sink005Sent",
                 float carrierFrequency = 434.0, float bandwidth = 250.0, uint8_t spreadingFactor = 7, uint8_t codingRate = 8, uint8_t syncWord = 0x33, uint8_t outputPower = 20, uint8_t preambleLength = 12, uint8_t amplifierGain = 0,

@@ -1,15 +1,15 @@
 #include "Sensor.h"
 #include "Communication.h"
 #include "Excution.h"
-#include "74HC595.h"
 #include "config.h"
 #include <SoftwareSerial.h>
+#include <ModbusMaster.h>
+ModbusMaster node;
 Communication communication;
 Excution excution;
-IC74HC595 ic74HC595;
-SoftwareSerial mySerial(18, 17);
+// SoftwareSerial mySerial(16, 17);
 DynamicJsonDocument doc3(1024);
-Sensor sensor(3, 16, &mySerial, 9600);
+Sensor sensor(26, 12, &Serial2, 9600);
 String firstMsg = "";
 TaskHandle_t taskHandleSendToSink = NULL;
 TaskHandle_t taskHandleReceiveFromSink = NULL;
@@ -17,35 +17,34 @@ TaskHandle_t taskHandleInstallation = NULL;
 TaskHandle_t taskHandleAnalize = NULL;
 TaskHandle_t taskHandleScanSink = NULL;
 
-void setIOIC0High();
-void setIOIC1Low();
-void setLed(int redState, int ylState, int blState);
 void getDataInNormalMode();
 void getDataInCheckingPin();
 
 void setup() {
   //begin
   Serial.begin(9600);
-  mySerial.begin(9600);
-  delay(5000);
+  Serial2.begin(9600, SERIAL_8N1, 16, 17);
   manager.begin();
   communication.begin();
-  ic74HC595.begin();
   excution.begin();
-  //set IO to LOW
-  setIOIC1Low();
-  ic74HC595.setPin(0, 0, LOW);
-  ic74HC595.setPin(0, 7, HIGH);
-  setLed(1, 0, 0);
-  //set time sleep
+  sensor.begin();
+  excution.setLed(1, 0, 0);
   esp_sleep_enable_timer_wakeup(timeToSleep);
   //get data
+  delay(5000);
   if (sensor.readBat() > 3.3 && excution.checkingMode() == "normal") {
+    excution.onSensor(Sensor1);
+    delay(2000);
+    excution.onSensor(Sensor2);
     getDataInNormalMode();
+    excution.offSensor(Sensor1);
+    excution.offSensor(Sensor2);
   } else if (sensor.readBat() > 3.2 && excution.checkingMode() == "normal") {
     getDataInCheckingPin();
+    Serial.println("check pin");
   } else if (sensor.readBat() < 3.2 && excution.checkingMode() == "normal") {
-    ic74HC595.setAllLow();
+    excution.offSensor(Sensor1);
+    excution.offSensor(Sensor2);
     Serial.println("sleep");
     Serial.flush();
     delay(200);
@@ -59,7 +58,7 @@ void setup() {
   xTaskCreatePinnedToCore(vtaskScanSink, "taskScanSink", 4096, NULL, 5, &taskHandleScanSink, 1);
   xTaskCreatePinnedToCore(vtaskBlocking, "vtaskBlocking", 4096, NULL, 5, NULL, 0);
   excution.isChangeMode = 1;
-  delay(2000);
+  delay(4000);
   vTaskDelete(NULL);
 }
 
@@ -67,7 +66,7 @@ void loop() {
 }
 void vtaskAnalize(void *pvParameters) {
   while (1) {
-    setLed(1, 0, 0);
+    excution.setLed(1, 0, 0);
     communication.analize(enviromentParameter);
     vTaskDelay(20 / portTICK_PERIOD_MS);
   }
@@ -82,9 +81,9 @@ void vtaskReceiveFromSink(void *pvParameters) {
   while (1) {
     communication.receiveFromSink();
     if (communication.hasMsgFromSink()) {
-      setLed(1, 0, 1);
+      excution.setLed(1, 0, 1);
       vTaskDelay(500 / portTICK_PERIOD_MS);
-      setLed(1, 0, 0);
+      excution.setLed(1, 0, 0);
     }
     vTaskDelay(20 / portTICK_PERIOD_MS);
   }
@@ -94,13 +93,13 @@ void vtaskInstallation(void *pvParameters) {
     communication.installationMode();
     // printf("RSSI: %f,SNR: %f \n", communication.RSSI, communication.SNR);
     if (communication.RSSI < -110 || communication.SNR < -2)
-      setLed(0, 0, 0);
+      excution.setLed(0, 0, 0);
     else if (communication.RSSI < -100 || communication.SNR < 0)
-      setLed(1, 0, 0);
+      excution.setLed(1, 0, 0);
     else if ((communication.RSSI < -80 && communication.RSSI > -100) || (communication.SNR < 6 && communication.SNR > 0))
-      setLed(1, 1, 0);
+      excution.setLed(1, 1, 0);
     else if (communication.RSSI > -80 && communication.SNR > 6)
-      setLed(1, 1, 1);
+      excution.setLed(1, 1, 1);
     timeCounter = millis();
     vTaskDelay(500 / portTICK_PERIOD_MS);
   }
@@ -137,7 +136,8 @@ void vtaskBlocking(void *pvParameters) {
       ESP.restart();
     }
     if (millis() - timeCounter >= timeWating) {
-      ic74HC595.setAllLow();
+      excution.offSensor(Sensor1);
+      excution.offSensor(Sensor2);
       Serial.println("sleep");
       Serial.flush();
       vTaskDelay(200 / portTICK_PERIOD_MS);
@@ -149,40 +149,23 @@ void vtaskBlocking(void *pvParameters) {
     vTaskDelay(1000 / portTICK_PERIOD_MS);
   }
 }
-void setIOIC0High() {
-  ic74HC595.setPin(0, 1, 1);
-  ic74HC595.setPin(0, 2, 1);
-  ic74HC595.setPin(0, 3, 1);
-  ic74HC595.setPin(0, 4, 1);
-  ic74HC595.setPin(0, 5, 1);
-  ic74HC595.setPin(0, 6, 1);
-}
-void setIOIC1Low() {
-  ic74HC595.setPin(0, 1, 0);
-  ic74HC595.setPin(0, 2, 0);
-  ic74HC595.setPin(0, 3, 0);
-  ic74HC595.setPin(0, 4, 0);
-  ic74HC595.setPin(0, 5, 0);
-  ic74HC595.setPin(0, 6, 0);
-}
-void setLed(int redState, int ylState, int blState) {
-  ic74HC595.setPin(1, 1, redState);
-  ic74HC595.setPin(1, 2, ylState);
-  ic74HC595.setPin(1, 0, blState);
-}
-void getDataInNormalMode() {
-  setIOIC0High();
-  delay(timeStartSensor);
-  setLed(1, 1, 0);
-  sensor.getValueOfSensor();
-  setLed(1, 0, 0);
+void saveDataToRam() {
   enviromentParameter.Salinity = sensor.getSalinity();
   enviromentParameter.PH = sensor.getPH();
   enviromentParameter.Temperature = sensor.getTemperature();
   enviromentParameter.NH4 = sensor.getNH4();
-  delay(500);
-  setLed(1, 0, 1);
-  setIOIC1Low();
+}
+
+void blinkLed(int numberOfLed, int time) {
+  for (int i = 0; i < time; i++) {
+    excution.setLed(1, numberOfLed == 2 ? 1 : 0, numberOfLed == 3 ? 1 : 0);
+    delay(200);
+    excution.setLed(1, numberOfLed == 2 ? 1 : 0, numberOfLed == 3 ? 1 : 0);
+    delay(200);
+  }
+}
+
+void saveDataToSink() {
   enviromentParameter.pin = sensor.readBat();
   doc3.clear();
   doc3["SS"] = 0;
@@ -195,12 +178,22 @@ void getDataInNormalMode() {
   doc3["Pin"] = enviromentParameter.pin;
   serializeJson(doc3, firstMsg);
   communication.sendToSink(firstMsg);
+}
+void getDataInNormalMode() {
+  delay(timeStartSensor);
+  blinkLed(2, 3);
+  sensor.getValueOfSensor();
+  excution.offSensor(Sensor1);
+  excution.offSensor(Sensor2);
+  saveDataToRam();
+  blinkLed(3, 1);
+  delay(500);
+  saveDataToSink();
   delay(200);
-  setLed(1, 0, 0);
+  excution.setLed(1, 0, 0);
 }
 void getDataInCheckingPin() {
-  setLed(1, 0, 1);
-  setIOIC1Low();
+  excution.setLed(1, 0, 1);
   doc3.clear();
   doc3["SS"] = 0;
   doc3["SID"] = communication.stationID;
@@ -210,6 +203,6 @@ void getDataInCheckingPin() {
   serializeJson(doc3, firstMsg);
   communication.sendToSink(firstMsg);
   delay(200);
-  setLed(1, 0, 0);
+  excution.setLed(1, 0, 0);
   timeWating = 20000;
 }

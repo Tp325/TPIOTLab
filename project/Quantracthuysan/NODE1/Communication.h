@@ -5,10 +5,10 @@
 #include <ArduinoJson.h>
 #include <ArduinoJson.hpp>
 
-#define Nss 10
-#define Rst 48
-#define Dio0 45
-#define Dio1 7
+#define Nss 5
+#define Rst 13
+#define Dio0 2
+#define Dio1 22
 
 extern DynamicJsonDocument doc;
 extern SX1278 radio;
@@ -58,6 +58,7 @@ public:
   // Khoảng: 512 – 767
   // Node khí (3)
   // Khoảng: 768 – 1023
+
   uint16_t stationID;
   uint16_t sensorID;
   Communication(uint16_t sensorID = 512,

@@ -3,15 +3,15 @@
 #include <Arduino.h>
 #include "CircularQueue.h"
 #include "Storage.h"
-#define timeStartSensor 7000
+#define timeStartSensor 5000
 #define timeToSleep 15ULL * 60ULL * 1000000ULL
-extern uint32_t timeWating;
+#define timeWating 60000
 extern NodeManager manager;
 struct sensorValue {
-  float Salinity;
-  float PH;
-  float NH4;
-  float Temperature;
+  float salinity = 0;
+  float pH = 0;
+  float nH4 = 0;
+  float temperature = 0;
   float pin = 0;
 };
 extern sensorValue enviromentParameter;
