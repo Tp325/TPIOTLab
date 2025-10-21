@@ -6,18 +6,20 @@
 // #include <HardwareSerial>
 class Sensor {
 private:
- // NH4  - mg/L
- // SAL - PPT
- // PH - H+
- // Tem - oC
- 
-  float SALSlope = 16.3;
+  // NH4  - mg/L
+  // SAL - PPT
+  // PH - H+
+  // Tem - oC
+
+  float SALSlope = 47.619;
   float SALIntercept = 0;
+  // float SALSlope = 16.3;
+  // float SALIntercept = 0;
   float PHSlope = -7.78;
   float PHIntercept = 16.34;
-  float Vnh4;  
-  float EmV;  
-  float Cnh4;  
+  float Vnh4;
+  float EmV;
+  float Cnh4;
   float slopeTMP = 1;
   float interceptTMP = 0;
   float Ko = 1.02119e-3;

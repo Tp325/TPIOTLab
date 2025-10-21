@@ -3,7 +3,7 @@
 
 #include <Arduino.h>
 #include <LiquidCrystal_I2C.h>
-
+extern SemaphoreHandle_t xI2C_Mutex;
 class Display {
 private:
   LiquidCrystal_I2C* lcd;

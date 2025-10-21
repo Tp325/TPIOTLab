@@ -1,3 +1,3 @@
 #include "config.h"
-float tem, Sal, PH, NH4, pin;
+float tem = 0, Sal = 0, PH = 0, NH4 = 0, pin = 0;
 NodeManager manager;

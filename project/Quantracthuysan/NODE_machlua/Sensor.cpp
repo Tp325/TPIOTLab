@@ -26,8 +26,10 @@ float Sensor::median(float numbers[], int size) {
 }
 void Sensor::getValueOfSensor() {
   for (int i = 0; i < 5; i++) {
-    Serial.println(" ---- ");
+    Serial.println("*************");
     SalinityRaw[i] = getVoltage(sentToSensor("SAL_1")) * SALSlope + SALIntercept;
+    Serial.print("SAL voltage: ");
+    Serial.println(getVoltage(sentToSensor("SAL_1")));
     Serial.print("Sal: ");
     Serial.println(SalinityRaw[i]);
     delay(500);
@@ -45,16 +47,21 @@ void Sensor::getValueOfSensor() {
     float lnR = logf(1000.0 * measured_resistance);
     float invT = Ko + K1 * lnR + K2 * powf(lnR, 3);
     float T = (1.0 / invT) - 273.15;  // °C
+    T += 9.0043;
     if (T < 0 || isnan(T)) T = 0;
     TemRaw[i] = T;
+    Serial.print("TMP voltage: ");
+    Serial.println(V);
     Serial.print("Tem: ");
     Serial.println(TemRaw[i]);
     delay(500);
     Serial.println(" ---- ");
     Vnh4 = getVoltage(sentToSensor("NH4_2_1"));
     EmV = (Vnh4 - 1.223) / 0.00727;
-    Cnh4 = exp((EmV - 178.61) / 23.889);
+    Cnh4 = exp(-1 * (((EmV + 168.23) / -23.889) + 7.487));
     NH4Raw[i] = Cnh4 > 0 ? Cnh4 : 0.0;
+    Serial.print("NH4 voltage: ");
+    Serial.println(Vnh4);
     Serial.print("NH4 (mg/L): ");
     Serial.println(NH4Raw[i]);
     delay(500);

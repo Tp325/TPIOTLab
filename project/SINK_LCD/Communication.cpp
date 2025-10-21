@@ -95,7 +95,7 @@ void Communication::begin() {
   wm.setConfigPortalBlocking(false);
   wm.setDarkMode(true);
   isWebAPStart = 1;
-  if (wm.autoConnect("Quan trắc lúa")) {
+  if (wm.autoConnect("Aqua Station")) {
     Serial.println("WIFI connected");
   } else {
     Serial.println("Web AP running");

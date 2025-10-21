@@ -8,22 +8,25 @@ void setup() {
   communication.begin();
   manager.begin();
   display.begin();
+  delay(3000);
+  display.clear();
   //xTaskCreatePinnedToCore(vTaskPrintDebug, "TaskPrintDebug", 1024, NULL, 5, NULL, 1);
+  xTaskCreatePinnedToCore(vtaskLCD, "taskLCD", 4096, NULL, 5, NULL, 0);
   xTaskCreatePinnedToCore(vtaskSendToNode, "taskSendToNode", 6144, NULL, 5, NULL, 1);
   xTaskCreatePinnedToCore(vtaskReceiveFromNode, "taskReceiveFromNode", 6144, NULL, 5, NULL, 1);
   xTaskCreatePinnedToCore(vtaskSendToServer, "taskSendToServer", 4096, NULL, 5, NULL, 1);
   xTaskCreatePinnedToCore(vtaskReceiveFromServer, "taskReceiveFromServer", 4096, NULL, 5, NULL, 1);
   xTaskCreatePinnedToCore(vtaskStorage, "taskStorage", 4096, NULL, 5, NULL, 1);
   xTaskCreatePinnedToCore(vtaskAnalize, "taskAnalize", 4096, NULL, 5, NULL, 1);
+  xTaskCreatePinnedToCore(vtaskButtom, "taskButtom", 4096, NULL, 5, NULL, 1);
   xTaskCreatePinnedToCore(vtaskProcess, "taskProcess", 4096, NULL, 5, NULL, 0);
-  xTaskCreatePinnedToCore(vtaskButtom, "taskButtom", 4096, NULL, 5, NULL, 0);
   xTaskCreatePinnedToCore(vtaskBlocking, "taskBlocking", 4096, NULL, 5, NULL, 0);
-  xTaskCreatePinnedToCore(vtaskLCD, "taskLCD", 4096, NULL, 5, NULL, 0);
-  delay(4000);
+  delay(2000);
   vTaskDelete(NULL);
 }
 
 void loop() {
+  vTaskDelete(NULL);
 }
 // // void vTaskPrintDebug(void *pvParameters) {
 // //   size_t freeHeap = xPortGetFreeHeapSize();
@@ -82,21 +85,23 @@ void vtaskAnalize(void *pvParameters) {
 void vtaskProcess(void *pvParameters) {
   while (1) {
     communication.process();
-    vTaskDelay(500 / portTICK_PERIOD_MS);
+    vTaskDelay(200 / portTICK_PERIOD_MS);
   }
 }
 void vtaskLCD(void *pvParameters) {
   while (1) {
     display.homePage(tem, Sal, PH, NH4, pin);
-    vTaskDelay(500 / portTICK_PERIOD_MS);
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
   }
 }
 void vtaskButtom(void *pvParameters) {
   pinMode(17, INPUT);
   unsigned long int timeCountDisplay = millis();
+  unsigned long int buffTime = millis();
   while (1) {
-    if (digitalRead(17) == 0) {
+    if (digitalRead(17) == 0 && millis() - buffTime > 250) {
       display.clear();
+      buffTime = millis();
       timeCountDisplay = millis();
     }
     if (millis() - timeCountDisplay >= 2 * 60 * 1000) {
@@ -104,6 +109,7 @@ void vtaskButtom(void *pvParameters) {
     } else {
       display.onDisplay();
     }
+    vTaskDelay(20 / portTICK_PERIOD_MS);
   }
 }
 void vtaskBlocking(void *pvParameters) {
