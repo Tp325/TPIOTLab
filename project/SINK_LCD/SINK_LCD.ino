@@ -90,7 +90,7 @@ void vtaskProcess(void *pvParameters) {
 }
 void vtaskLCD(void *pvParameters) {
   while (1) {
-    display.homePage(tem, Sal, PH, NH4, pin);
+    display.homePage(Do, tem, Sal, PH, NH4, pin);
     vTaskDelay(1000 / portTICK_PERIOD_MS);
   }
 }

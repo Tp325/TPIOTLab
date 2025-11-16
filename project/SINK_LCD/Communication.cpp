@@ -147,6 +147,7 @@ void Communication::receiveFromNode() {
             manager.printNodes();
           } else {
             if (doc["ID"].as<uint16_t>() < 767 && doc["ID"].as<uint16_t>() >= 512) {
+              Do = doc["Do"].as<float>();
               tem = doc["Tem"].as<float>();
               Sal = doc["Sa"].as<float>();
               PH = doc["PH"].as<float>();

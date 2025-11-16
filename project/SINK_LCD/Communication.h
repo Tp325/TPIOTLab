@@ -105,7 +105,6 @@ public:
   // Khoảng: 512 – 767
   // Node khí (3)
   // Khoảng: 768 – 1023
-
  
   Communication(uint16_t SID = 5, String clientmqtt = "Sink005",
                 String topicReceive = "Sink005Recieve", String topicSend = "Sink005Sent",

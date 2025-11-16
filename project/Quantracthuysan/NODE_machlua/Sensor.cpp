@@ -27,9 +27,16 @@ float Sensor::median(float numbers[], int size) {
 void Sensor::getValueOfSensor() {
   for (int i = 0; i < 5; i++) {
     Serial.println("*************");
-    SalinityRaw[i] = getVoltage(sentToSensor("SAL_1")) * SALSlope + SALIntercept;
+    O2Raw[i] = (getVoltage(sentToSensor("OXY_2_1")) * O2Slope + O2Intercept) < 0.1 ? 0 : (getVoltage(sentToSensor("OXY_2_1")) * O2Slope + O2Intercept);
+    Serial.print("O2 voltage: ");
+    Serial.println(getVoltage(sentToSensor("OXY_2_1")));
+    Serial.print("O2: ");
+    Serial.println(O2Raw[i]);
+    delay(500);
+    Serial.println(" ---- ");
+    SalinityRaw[i] = (getVoltage(sentToSensor("SAL_2_1")) * SALSlope + SALIntercept) < 0.1 ? 0 : (getVoltage(sentToSensor("SAL_2_1")) * SALSlope + SALIntercept);
     Serial.print("SAL voltage: ");
-    Serial.println(getVoltage(sentToSensor("SAL_1")));
+    Serial.println(getVoltage(sentToSensor("SAL_2_1")));
     Serial.print("Sal: ");
     Serial.println(SalinityRaw[i]);
     delay(500);
@@ -57,8 +64,7 @@ void Sensor::getValueOfSensor() {
     delay(500);
     Serial.println(" ---- ");
     Vnh4 = getVoltage(sentToSensor("NH4_2_1"));
-    EmV = (Vnh4 - 1.223) / 0.00727;
-    Cnh4 = exp(-1 * (((EmV + 168.23) / -23.889) + 7.487));
+    Cnh4 = exp((Vnh4 - 1.603128) / 0.143279);
     NH4Raw[i] = Cnh4 > 0 ? Cnh4 : 0.0;
     Serial.print("NH4 voltage: ");
     Serial.println(Vnh4);
@@ -100,4 +106,7 @@ float Sensor ::getNH4() {
 }
 float Sensor ::getTemperature() {
   return median(TemRaw, 5);
+}
+float Sensor ::getOxygen() {
+  return median(O2Raw, 5);
 }

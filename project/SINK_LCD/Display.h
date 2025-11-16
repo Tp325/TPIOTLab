@@ -13,7 +13,7 @@ public:
   Display(uint8_t address = 0x27, int columns = 20, int rows = 4);
   void begin();
   void logo();
-  void homePage(float tem, float Sal, float PH, float NH4, float pin);
+  void homePage(float Do,float tem, float Sal, float PH, float NH4, float pin);
   void shutDownDisplay();
   void onDisplay();
   void clear();

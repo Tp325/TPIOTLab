@@ -11,8 +11,11 @@ private:
   // PH - H+
   // Tem - oC
 
-  float SALSlope = 47.619;
-  float SALIntercept = 0;
+  float O2Slope = 4.444;
+  float O2Intercept = -0.4444;
+
+  float SALSlope = 18.94;
+  float SALIntercept = -3.51;
   // float SALSlope = 16.3;
   // float SALIntercept = 0;
   float PHSlope = -7.78;
@@ -37,6 +40,7 @@ private:
   float PHRaw[5];
   float TemRaw[5];
   float NH4Raw[5];
+  float O2Raw[5];
   float median(float numbers[], int size);
 public:
   Sensor(int BatSense3V3, int BatSense12V,
@@ -47,6 +51,7 @@ public:
   float getPH();
   float getNH4();
   float getTemperature();
+  float getOxygen();
   void getValueOfSensor();
 };
 #endif

@@ -33,9 +33,9 @@ void setup() {
   //get data
   delay(5000);
   if (sensor.readBat() > 3.3 && excution.checkingMode() == "normal") {
-    excution.onSensor(Sensor1);
-    delay(2000);
     excution.onSensor(Sensor2);
+    delay(7000);
+    excution.onSensor(Sensor1);
     getDataInNormalMode();
     excution.offSensor(Sensor1);
     excution.offSensor(Sensor2);
@@ -150,6 +150,7 @@ void vtaskBlocking(void *pvParameters) {
   }
 }
 void saveDataToRam() {
+  enviromentParameter.Do = sensor.getOxygen();
   enviromentParameter.Salinity = sensor.getSalinity();
   enviromentParameter.PH = sensor.getPH();
   enviromentParameter.Temperature = sensor.getTemperature();
@@ -171,6 +172,7 @@ void saveDataToSink() {
   doc3["SS"] = 0;
   doc3["SID"] = communication.stationID;
   doc3["ID"] = communication.sensorID;
+  doc3["Do"] = enviromentParameter.Do;
   doc3["Sa"] = enviromentParameter.Salinity;
   doc3["PH"] = enviromentParameter.PH;
   doc3["Tem"] = enviromentParameter.Temperature;

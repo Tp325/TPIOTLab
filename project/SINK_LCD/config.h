@@ -3,7 +3,7 @@
 #include <Arduino.h>
 #include "Storage.h"
 extern NodeManager manager;
-extern float tem, Sal, PH, NH4, pin;
+extern float Do,tem, Sal, PH, NH4, pin;
 #define ledRed 13
 
 #endif

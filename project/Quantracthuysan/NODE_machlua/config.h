@@ -8,6 +8,7 @@
 extern uint32_t timeWating;
 extern NodeManager manager;
 struct sensorValue {
+  float Do;
   float Salinity;
   float PH;
   float NH4;

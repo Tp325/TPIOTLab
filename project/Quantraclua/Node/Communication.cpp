@@ -6,6 +6,7 @@ int state;
 int trasmitState;
 volatile bool receiveFlag = false;
 bool isSended;
+
 void setReceiveFlag() {
   //Serial.println("flag");
   receiveFlag = true;
@@ -14,6 +15,7 @@ void setReceiveFlag() {
     isSended = 0;
   }
 }
+
 Communication::Communication(uint16_t sensorID,
                              float carrierFrequency, float bandwidth, uint8_t spreadingFactor, uint8_t codingRate, uint8_t syncWord, uint8_t outputPower, uint8_t preambleLength, uint8_t amplifierGain) {
   this->sensorID = sensorID;
@@ -46,6 +48,7 @@ void Communication::begin() {
   }
   stationID = manager.loadFromEEPROM();
 }
+
 bool Communication ::scanNewSink() {
   if (isScanningNewSink == 1) {
     isSended = 1;
@@ -64,6 +67,7 @@ bool Communication ::scanNewSink() {
   }
   return isScanningNewSink;
 }
+
 void Communication::sendToSinkWithACK() {
   while (!isEmpty(buffDataToSink) && tryToSend < 3) {
     if (isReceiveACK == 1) {
@@ -98,6 +102,7 @@ void Communication::sendToSinkWithACK() {
     isScanningNewSink = 1;
   }
 }
+
 void Communication::sendToSink(String msg) {
   if (!isFull(buffDataToSink)) {
     enqueueData(buffDataToSink, msg.c_str());

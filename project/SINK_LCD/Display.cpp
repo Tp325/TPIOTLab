@@ -30,10 +30,11 @@ void Display::print(int collum, int row, float msg) {
   lcd->setCursor(collum, row);
   lcd->print(msg, 1);
 }
-void Display::homePage(float tem, float Sal, float PH, float NH4, float pin) {
+void Display::homePage(float Do,float tem, float Sal, float PH, float NH4, float pin) {
   if (xSemaphoreTake(xI2C_Mutex, portMAX_DELAY) == pdTRUE) {
-    print(0, 0, "VALUE");
-    print(11, 0, "Tmp");
+    print(0, 0, "Do:");
+    print(4, 0, Do);
+    print(10, 0, "Tmp:");
     print(14, 0, tem);
     print(0, 1, "SAL:");
     print(4, 1, Sal);
