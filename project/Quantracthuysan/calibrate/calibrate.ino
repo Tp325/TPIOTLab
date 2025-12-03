@@ -6,10 +6,10 @@ void setup() {
 }
 //PH_2_1  SAL_2_1  TMP_2_1  NH4_2_1
 void loop() {
-  mySerial.println("NH4_2_1");
+  mySerial.println("DO_2_1");
   delay(200);
   if (mySerial.available()) {
-    Serial.println(137.55 * (mySerial.readStringUntil('\n').toInt() * 5.0 / 1023.0) - 218.2);
+    Serial.println(4.444 * (mySerial.readStringUntil('\n').toInt() * 5.0 / 1023.0) - -0.4444);
   }
   delay(2000);
 }

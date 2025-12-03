@@ -36,12 +36,12 @@ private:
   long baurate;
   float getVoltage(int RawValue);
   int sentToSensor(String data);
+  float median(float numbers[], int size);
   float SalinityRaw[5];
   float PHRaw[5];
   float TemRaw[5];
   float NH4Raw[5];
   float O2Raw[5];
-  float median(float numbers[], int size);
 public:
   Sensor(int BatSense3V3, int BatSense12V,
          HardwareSerial* comunication, long baurate);
@@ -52,6 +52,6 @@ public:
   float getNH4();
   float getTemperature();
   float getOxygen();
-  void getValueOfSensor();
+  void printDebug();
 };
 #endif

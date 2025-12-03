@@ -33,9 +33,6 @@ void setup() {
   //get data
   delay(5000);
   if (sensor.readBat() > 3.3 && excution.checkingMode() == "normal") {
-    excution.onSensor(Sensor2);
-    delay(7000);
-    excution.onSensor(Sensor1);
     getDataInNormalMode();
     excution.offSensor(Sensor1);
     excution.offSensor(Sensor2);
@@ -149,14 +146,6 @@ void vtaskBlocking(void *pvParameters) {
     vTaskDelay(1000 / portTICK_PERIOD_MS);
   }
 }
-void saveDataToRam() {
-  enviromentParameter.Do = sensor.getOxygen();
-  enviromentParameter.Salinity = sensor.getSalinity();
-  enviromentParameter.PH = sensor.getPH();
-  enviromentParameter.Temperature = sensor.getTemperature();
-  enviromentParameter.NH4 = sensor.getNH4();
-}
-
 void blinkLed(int numberOfLed, int time) {
   for (int i = 0; i < time; i++) {
     excution.setLed(1, numberOfLed == 2 ? 1 : 0, numberOfLed == 3 ? 1 : 0);
@@ -182,12 +171,19 @@ void saveDataToSink() {
   communication.sendToSink(firstMsg);
 }
 void getDataInNormalMode() {
+  excution.onSensor(Sensor1);
   delay(timeStartSensor);
   blinkLed(2, 3);
-  sensor.getValueOfSensor();
+  enviromentParameter.Do = sensor.getOxygen();
+  enviromentParameter.Salinity = sensor.getSalinity();
   excution.offSensor(Sensor1);
+  excution.onSensor(Sensor2);
+  delay(timeStartSensor);
+  blinkLed(2, 3);
+  enviromentParameter.PH = sensor.getPH();
+  enviromentParameter.Temperature = sensor.getTemperature();
+  enviromentParameter.NH4 = sensor.getNH4();
   excution.offSensor(Sensor2);
-  saveDataToRam();
   blinkLed(3, 1);
   delay(500);
   saveDataToSink();
